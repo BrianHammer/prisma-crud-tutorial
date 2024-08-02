@@ -1,0 +1,71 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Downsides with id Int @id @default(autoincrement()):
+// Users get more insight into how your app works-
+// change id from 2 to 3 to see different posts
+
+// CUID VS UUID VS Auto Incrementing:
+// https://dev.to/harshhhdev/uuidguid-cuid-nanoid-whats-the-difference-5dj1
+// https://www.codu.co/articles/integers-uuid-guid-cuid-and-nanoid-explained-z_1mombc
+// Auto Incrementing:
+// - Simple - easy to understand
+// - performance - smallest option - speeds up query operations
+// - predictability - benefits sorting
+// - use cases - apps that require performance over organization
+// UUID/GUID:
+// - 128 bit label 
+// - Universal - generate on any system
+// - low collision probability
+// - near zero chance it is used
+// - problem: They are too big and take up too much space in a URL.
+//    -Double clicking interprets the ID as five different words
+//    -NOT used for web applications
+// - use cases - high level of uniqueness, less info about where it came from
+// CUID: 
+// - Shorter URLs for the web
+// - No collisions on 100M iterations
+// - improve index efficiency
+// - Better algorithm for reducing collisions
+// Nano ID:
+// - highly compact and URL friendly IDs
+// - customizable
+// --- Change alphabet and size
+// - Best for projects that need short and safe codes
+model Post {
+  id String @id @default(cuid())
+
+  // Getting the URL by ID leads to an ugly URL
+  // It is common to have it based on a name
+  slug      String   @unique()
+  title     String
+  content   String
+  published Boolean  @default(false) // defaults are always optional
+  updatedAt DateTime @updatedAt // Whenever there is a change, update
+  createdAt DateTime @default(now()) // Make the value as soon as created
+
+  //Implicit many to many relation
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+
+  // Creating indexes improves read performance
+  // If you access slug a lot, index it
+  @@index(slug)
+}
+
+model User {
+  id             String @id @default(cuid())
+  email          String @unique
+  hashedPassword String
+
+  posts Post[]
+}
